@@ -1,0 +1,33 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { env } from './lib/env';
+import { errorHandler } from './middleware/errorHandler';
+import { notFound } from './middleware/notFound';
+import { authenticate } from './middleware/auth';
+import healthRouter from './routes/health';
+import authRouter from './routes/auth.routes';
+import clientsRouter from './routes/clients.routes';
+import quotationsRouter from './routes/quotations.routes';
+
+const app = express();
+
+app.use(helmet());
+
+app.use(cors({ origin: env.FRONTEND_URL }));
+
+app.use(express.json());
+
+app.use(morgan('dev'));
+
+app.use('/api/health', healthRouter);
+app.use('/api/auth', authRouter);
+
+app.use('/api/clients', authenticate, clientsRouter);
+app.use('/api/quotations', authenticate, quotationsRouter);
+
+app.use(notFound);
+app.use(errorHandler);
+
+export default app;
