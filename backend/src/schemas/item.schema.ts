@@ -5,7 +5,7 @@ export const createItemSchema = z.object({
   description: z.string().optional(),
   quantity: z.number().int().positive().default(1),
   unitPrice: z.number().min(0).default(0),
-  estimatedHours: z.number().int().positive().optional(),
+  estimatedHours: z.number().int().min(0).optional(),
 });
 
 export const updateItemSchema = createItemSchema.partial();

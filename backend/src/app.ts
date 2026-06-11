@@ -10,6 +10,7 @@ import healthRouter from './routes/health';
 import authRouter from './routes/auth.routes';
 import clientsRouter from './routes/clients.routes';
 import quotationsRouter from './routes/quotations.routes';
+import publicRouter from './routes/public.routes';
 
 const app = express();
 
@@ -24,6 +25,7 @@ app.use(morgan('dev'));
 app.use('/api/health', healthRouter);
 app.use('/api/auth', authRouter);
 
+app.use('/api/public', publicRouter);
 app.use('/api/clients', authenticate, clientsRouter);
 app.use('/api/quotations', authenticate, quotationsRouter);
 

@@ -37,6 +37,8 @@ model Quotation {
   status      QuotationStatus @default(DRAFT)
   totalAmount Decimal         @default(0) @db.Decimal(12, 2)
   notes       String?         @db.Text
+  reviewToken String?         @unique
+  sentAt      DateTime?
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
   client      Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)

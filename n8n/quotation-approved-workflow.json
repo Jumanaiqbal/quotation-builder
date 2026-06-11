@@ -1,0 +1,59 @@
+{
+  "name": "Quotify - Quotation Approved",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "quotation-approved",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "f2918de1-9269-48ef-80ab-da92da1c939d",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 192],
+      "webhookId": "quotify-quotation-approved"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.body.clientEmail }}",
+        "subject": "=Quotation Approved: {{ $json.body.title }}",
+        "emailType": "text",
+        "message": "=A quotation was approved in Quotify.\n\nTitle: {{ $json.body.title }}\nClient: {{ $json.body.clientName }}\nEmail: {{ $json.body.clientEmail }}\nTotal: {{ $json.body.totalAmount }}\nQuotation ID: {{ $json.body.quotationId }}\nEvent: {{ $json.body.event }}\n\n— Quotify",
+        "options": {}
+      },
+      "id": "eb941331-4e0e-43f9-9126-ad9b2a0dcb31",
+      "name": "Send notification email",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [240, 192],
+      "notes": "Sends approval confirmation to the client. For team alerts, change sendTo to your email."
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"success\": true, \"message\": \"Quotation approved notification sent\" }",
+        "options": {}
+      },
+      "id": "41d929c6-e131-429e-b8f1-6f34bb5159a9",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [480, 192]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [[{ "node": "Send notification email", "type": "main", "index": 0 }]]
+    },
+    "Send notification email": {
+      "main": [[{ "node": "Respond to Webhook", "type": "main", "index": 0 }]]
+    }
+  },
+  "pinData": {},
+  "settings": { "executionOrder": "v1" },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}

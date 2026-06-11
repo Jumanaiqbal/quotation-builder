@@ -14,9 +14,8 @@ export const createItem = async (
     const quotationId = req.params['id'] as string;
     const data = createItemSchema.parse(req.body);
 
-    const quotation = await prisma.quotation.findUnique({ where: { id: quotationId } });
-    if (!quotation) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
-
+    // A bad quotationId triggers a foreign-key error (P2003 → 404) on create,
+    // so we avoid a separate existence query.
     const unitPrice = new Decimal(data.unitPrice);
     const total = calculateItemTotal(data.quantity, unitPrice);
 

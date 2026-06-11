@@ -3,6 +3,11 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../lib/AppError';
 import { createQuotationSchema, updateQuotationSchema } from '../schemas/quotation.schema';
 import { fireApprovalWebhook } from '../services/n8n.service';
+import { buildQuotationHtml } from '../services/quotation-html.service';
+import { parseQuotationLang } from '../lib/quotation-i18n';
+import { htmlToPdf } from '../services/quotation-pdf.service';
+import { generateReviewToken } from '../lib/reviewToken';
+import { env } from '../lib/env';
 import { QuotationStatus } from '../generated/prisma/client';
 
 export const listQuotations = async (
@@ -28,7 +33,7 @@ export const listQuotations = async (
       ];
     }
 
-    const [quotations, total] = await prisma.$transaction([
+    const [quotations, total] = await Promise.all([
       prisma.quotation.findMany({
         where,
         skip,
@@ -56,9 +61,8 @@ export const createQuotation = async (
   try {
     const data = createQuotationSchema.parse(req.body);
 
-    const client = await prisma.client.findUnique({ where: { id: data.clientId } });
-    if (!client) throw new AppError('Client not found', 404, 'NOT_FOUND');
-
+    // A bad clientId triggers a foreign-key error (P2003) which the error handler maps to 404,
+    // so we skip a separate existence query.
     const quotation = await prisma.quotation.create({
       data,
       include: { client: true, items: true },
@@ -96,9 +100,8 @@ export const updateQuotation = async (
   try {
     const id = req.params['id'] as string;
     const data = updateQuotationSchema.parse(req.body);
-    const exists = await prisma.quotation.findUnique({ where: { id } });
-    if (!exists) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
 
+    // update throws P2025 if the row is missing → mapped to 404 by the error handler.
     const quotation = await prisma.quotation.update({
       where: { id },
       data,
@@ -117,10 +120,103 @@ export const deleteQuotation = async (
 ): Promise<void> => {
   try {
     const id = req.params['id'] as string;
-    const exists = await prisma.quotation.findUnique({ where: { id } });
-    if (!exists) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
     await prisma.quotation.delete({ where: { id } });
     res.status(204).send();
+  } catch (err) {
+    next(err);
+  }
+};
+
+const pdfFilename = (title: string) =>
+  `${title.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'quotation'}.pdf`;
+
+export const getQuotationPdf = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const id = req.params['id'] as string;
+    const quotation = await prisma.quotation.findUnique({
+      where: { id },
+      include: { client: true, items: true },
+    });
+    if (!quotation) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
+
+    const lang = parseQuotationLang(req.query.lang);
+    const html = buildQuotationHtml(quotation, lang);
+    const pdf = await htmlToPdf(html);
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${pdfFilename(quotation.title)}"`);
+    res.send(pdf);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getQuotationPreview = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const id = req.params['id'] as string;
+    const quotation = await prisma.quotation.findUnique({
+      where: { id },
+      include: { client: true, items: true },
+    });
+    if (!quotation) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
+
+    const lang = parseQuotationLang(req.query.lang);
+    res.json({
+      quotation,
+      html: buildQuotationHtml(quotation, lang),
+      lang,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const sendQuotation = async (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> => {
+  try {
+    const id = req.params['id'] as string;
+    const quotation = await prisma.quotation.findUnique({
+      where: { id },
+      include: { client: true, items: true },
+    });
+    if (!quotation) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
+    if (quotation.status !== 'DRAFT') {
+      throw new AppError('Only draft quotations can be sent', 409, 'INVALID_STATUS');
+    }
+    if (!quotation.items.length) {
+      throw new AppError('Add at least one item before sending', 400, 'NO_ITEMS');
+    }
+
+    const reviewToken = quotation.reviewToken ?? generateReviewToken();
+    const reviewUrl = `${env.FRONTEND_URL}/review/${reviewToken}`;
+
+    const updated = await prisma.quotation.update({
+      where: { id },
+      data: {
+        status: 'SENT',
+        reviewToken,
+        sentAt: new Date(),
+      },
+      include: { client: true, items: true },
+    });
+
+    res.json({
+      success: true,
+      quotation: updated,
+      reviewUrl,
+      message: 'Quotation marked as sent — share the review link with your client',
+    });
   } catch (err) {
     next(err);
   }
@@ -133,8 +229,6 @@ export const approveQuotation = async (
 ): Promise<void> => {
   try {
     const id = req.params['id'] as string;
-    const exists = await prisma.quotation.findUnique({ where: { id } });
-    if (!exists) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
 
     const quotation = await prisma.quotation.update({
       where: { id },

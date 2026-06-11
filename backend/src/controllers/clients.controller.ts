@@ -24,7 +24,7 @@ export const listClients = async (
         }
       : {};
 
-    const [clients, total] = await prisma.$transaction([
+    const [clients, total] = await Promise.all([
       prisma.client.findMany({
         where,
         skip,
@@ -80,8 +80,7 @@ export const updateClient = async (
   try {
     const id = req.params['id'] as string;
     const data = updateClientSchema.parse(req.body);
-    const exists = await prisma.client.findUnique({ where: { id } });
-    if (!exists) throw new AppError('Client not found', 404, 'NOT_FOUND');
+    // update throws P2025 if missing → mapped to 404 by the error handler.
     const client = await prisma.client.update({ where: { id }, data });
     res.json(client);
   } catch (err) {
@@ -96,8 +95,6 @@ export const deleteClient = async (
 ): Promise<void> => {
   try {
     const id = req.params['id'] as string;
-    const exists = await prisma.client.findUnique({ where: { id } });
-    if (!exists) throw new AppError('Client not found', 404, 'NOT_FOUND');
     await prisma.client.delete({ where: { id } });
     res.status(204).send();
   } catch (err) {

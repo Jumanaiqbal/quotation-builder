@@ -2,6 +2,10 @@ import axios from 'axios';
 import { env } from '../lib/env';
 import { logger } from '../lib/logger';
 
+/**
+ * Spec requirement: fire n8n webhook only when quotation status becomes Approved.
+ * Send/reject email flows are handled in-app for the demo; see APPROACH.md for production plan.
+ */
 export const fireApprovalWebhook = async (
   quotationId: string,
   payload: Record<string, unknown>,
@@ -12,12 +16,12 @@ export const fireApprovalWebhook = async (
   }
 
   try {
-    await axios.post(env.N8N_WEBHOOK_URL, {
-      event: 'quotation.approved',
-      quotationId,
-      ...payload,
-    });
-    logger.info('n8n webhook fired successfully', { quotationId });
+    await axios.post(
+      env.N8N_WEBHOOK_URL,
+      { event: 'quotation.approved', quotationId, ...payload },
+      { timeout: 15000 },
+    );
+    logger.info('n8n approval webhook fired', { quotationId });
   } catch (err) {
     logger.error('n8n webhook failed (non-blocking)', {
       quotationId,
