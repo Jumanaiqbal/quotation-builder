@@ -14,6 +14,10 @@ import publicRouter from './routes/public.routes';
 
 const app = express();
 
+app.get('/', (_req, res) => {
+  res.json({ status: 'ok', service: 'Quotify API', health: '/api/health' });
+});
+
 app.use(helmet());
 
 app.use(cors({ origin: env.FRONTEND_URL }));
