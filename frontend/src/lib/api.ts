@@ -70,7 +70,7 @@ export const quotationsApi = {
 const publicApi = axios.create({ baseURL: import.meta.env.VITE_API_URL })
 
 export const publicQuotationsApi = {
-  getReview: (token: string, lang: QuotationLang = 'both') =>
+  getReview: (token: string, lang: QuotationLang = 'en') =>
     publicApi.get<PublicQuotationReview>(`/public/quotations/review/${token}`, { params: { lang } }).then((r) => r.data),
   approve: (token: string) =>
     publicApi.post<{ success: boolean; status: string }>(`/public/quotations/review/${token}/approve`).then((r) => r.data),

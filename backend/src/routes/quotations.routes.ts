@@ -6,7 +6,6 @@ import {
   updateQuotation,
   deleteQuotation,
   getQuotationPreview,
-  getQuotationPdf,
   sendQuotation,
   approveQuotation,
 } from '../controllers/quotations.controller';
@@ -20,7 +19,6 @@ router.post('/ai-draft', getAiDraft);
 router.get('/', listQuotations);
 router.post('/', createQuotation);
 router.get('/:id/preview', getQuotationPreview);
-router.get('/:id/pdf', getQuotationPdf);
 router.post('/:id/send', sendQuotation);
 router.get('/:id', getQuotation);
 router.put('/:id', updateQuotation);

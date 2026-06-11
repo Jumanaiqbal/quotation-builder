@@ -48,8 +48,30 @@ Sent   →  client approves on /review/:token  OR  admin clicks "Approve (trigge
 ## Tests
 
 ```bash
-cd backend && npm run test:run
+cd backend && npm run test:run   # 90 unit tests
 ```
+
+## Deployment (Vercel)
+
+Both apps deploy as separate Vercel projects from this monorepo.
+
+### Backend (`backend/`)
+1. Vercel → New Project → import this repo → **Root Directory: `backend`**
+2. Framework preset: **Other** (the Express app is exported from `api/index.ts`)
+3. Environment variables:
+   - `DATABASE_URL` (Supabase pooled connection string)
+   - `DIRECT_URL` (Supabase direct connection string)
+   - `JWT_SECRET`
+   - `ANTHROPIC_API_KEY`
+   - `N8N_WEBHOOK_URL`
+   - `FRONTEND_URL` (the deployed frontend URL — set after step 2 below)
+4. Deploy — `postinstall` runs `prisma generate` automatically
+
+### Frontend (`frontend/`)
+1. Vercel → New Project → same repo → **Root Directory: `frontend`**
+2. Framework preset: **Vite**
+3. Environment variable: `VITE_API_URL` = `https://<backend-deployment>.vercel.app/api`
+4. Deploy, then copy the frontend URL back into the backend's `FRONTEND_URL` and redeploy the backend (needed for CORS and review links)
 
 ## Submission docs
 

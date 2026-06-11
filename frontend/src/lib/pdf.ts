@@ -1,5 +1,16 @@
 import html2pdf from 'html2pdf.js'
 
+// The package's bundled Html2PdfOptions type omits `pagebreak` (supported at runtime),
+// and its overloads make the type underivable — so we keep our own options shape.
+interface PdfOptions {
+  margin: [number, number, number, number]
+  filename: string
+  image: { type: 'jpeg' | 'png' | 'webp'; quality: number }
+  html2canvas: object
+  jsPDF: { unit: string; format: string; orientation: 'portrait' | 'landscape' }
+  pagebreak?: { mode?: string | string[] }
+}
+
 const A4_WIDTH_PX = 794
 const PAGE_WIDTH_PX = 746
 
@@ -38,8 +49,7 @@ export const downloadPdfFromHtml = async (html: string, filename: string): Promi
   }
 
   try {
-    await html2pdf()
-      .set({
+    const options: PdfOptions = {
         margin: [10, 10, 10, 10],
         filename,
         image: { type: 'jpeg', quality: 0.98 },
@@ -66,9 +76,8 @@ export const downloadPdfFromHtml = async (html: string, filename: string): Promi
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
-      })
-      .from(element)
-      .save()
+      }
+    await html2pdf().set(options).from(element).save()
   } finally {
     iframe.remove()
   }

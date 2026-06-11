@@ -4,7 +4,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import {
-  ArrowLeft, Send, Trash2, Pencil, Plus, Eye, Download,
+  ArrowLeft, Trash2, Pencil, Plus, Eye, Download,
   Sparkles, Loader2, MessageCircle, User, Calendar, Package, Clock, Copy, CheckCircle,
 } from 'lucide-react'
 import { AppShell } from '@/components/layout/AppShell'
@@ -33,7 +33,9 @@ const itemSchema = z.object({
   unitPrice: z.coerce.number().min(0, 'Must be ≥ 0'),
   estimatedHours: z.coerce.number().optional(),
 })
-type ItemForm = z.infer<typeof itemSchema>
+// z.coerce gives `unknown` input types in Zod v4, so RHF needs separate input/output types
+type ItemFormInput = z.input<typeof itemSchema>
+type ItemForm = z.output<typeof itemSchema>
 
 export const QuotationDetailPage = () => {
   const { id } = useParams<{ id: string }>()
@@ -59,13 +61,13 @@ export const QuotationDetailPage = () => {
   const deleteItem = useDeleteItem(id ?? '')
   const aiDraft = useAiDraft()
 
-  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<ItemForm>({
+  const { register, handleSubmit, reset, watch, formState: { errors, isSubmitting } } = useForm<ItemFormInput, unknown, ItemForm>({
     resolver: zodResolver(itemSchema),
     defaultValues: { quantity: 1, unitPrice: 0 },
   })
 
-  const qty = watch('quantity') || 0
-  const price = watch('unitPrice') || 0
+  const qty = Number(watch('quantity')) || 0
+  const price = Number(watch('unitPrice')) || 0
   const lineTotal = (qty * price).toFixed(2)
 
   const openAddItem = () => { setEditItem(null); reset({ quantity: 1, unitPrice: 0 }); setItemDialogOpen(true) }

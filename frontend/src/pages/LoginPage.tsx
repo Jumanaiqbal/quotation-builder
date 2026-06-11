@@ -55,7 +55,7 @@ export const LoginPage = () => {
           </div>
 
           <h2 className="font-display text-3xl font-medium text-burgundy text-center mb-10">
-            Welcome Back
+            Welcome!
           </h2>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">

@@ -5,7 +5,6 @@ import { createQuotationSchema, updateQuotationSchema } from '../schemas/quotati
 import { fireApprovalWebhook } from '../services/n8n.service';
 import { buildQuotationHtml } from '../services/quotation-html.service';
 import { parseQuotationLang } from '../lib/quotation-i18n';
-import { htmlToPdf } from '../services/quotation-pdf.service';
 import { generateReviewToken } from '../lib/reviewToken';
 import { env } from '../lib/env';
 import { QuotationStatus } from '../generated/prisma/client';
@@ -122,34 +121,6 @@ export const deleteQuotation = async (
     const id = req.params['id'] as string;
     await prisma.quotation.delete({ where: { id } });
     res.status(204).send();
-  } catch (err) {
-    next(err);
-  }
-};
-
-const pdfFilename = (title: string) =>
-  `${title.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'quotation'}.pdf`;
-
-export const getQuotationPdf = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const id = req.params['id'] as string;
-    const quotation = await prisma.quotation.findUnique({
-      where: { id },
-      include: { client: true, items: true },
-    });
-    if (!quotation) throw new AppError('Quotation not found', 404, 'NOT_FOUND');
-
-    const lang = parseQuotationLang(req.query.lang);
-    const html = buildQuotationHtml(quotation, lang);
-    const pdf = await htmlToPdf(html);
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${pdfFilename(quotation.title)}"`);
-    res.send(pdf);
   } catch (err) {
     next(err);
   }

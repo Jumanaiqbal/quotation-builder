@@ -2,7 +2,6 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../lib/AppError';
 import { buildQuotationHtml } from '../services/quotation-html.service';
-import { htmlToPdf } from '../services/quotation-pdf.service';
 import { fireApprovalWebhook } from '../services/n8n.service';
 import { parseQuotationLang } from '../lib/quotation-i18n';
 
@@ -37,27 +36,6 @@ export const getQuotationByReviewToken = async (
       html: buildQuotationHtml(quotation, lang),
       lang,
     });
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const getQuotationPdfByReviewToken = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-): Promise<void> => {
-  try {
-    const token = req.params['token'] as string;
-    const quotation = await findByToken(token);
-    const lang = parseQuotationLang(req.query.lang);
-    const html = buildQuotationHtml(quotation, lang);
-    const pdf = await htmlToPdf(html);
-    const filename = `${quotation.title.replace(/[^a-z0-9]+/gi, '-').toLowerCase() || 'quotation'}.pdf`;
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.send(pdf);
   } catch (err) {
     next(err);
   }

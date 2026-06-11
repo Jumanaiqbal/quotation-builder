@@ -27,7 +27,7 @@ Send/reject do **not** call n8n in this build, because the test spec limits n8n 
 | **Reject** | n8n or in-app notification to sales team when client rejects |
 | **Auth on review links** | Optional OTP or signed expiring tokens instead of static `reviewToken` |
 | **Database region** | Move Supabase from Sydney → Mumbai/Bahrain region to cut latency (~300ms → ~50ms per query) |
-| **PDF** | Queue PDF generation (Bull/Redis) so Puppeteer does not block API threads |
+| **PDF** | Currently client-side (html2pdf.js) to stay serverless-friendly; in production, server-side rendering (Puppeteer/Gotenberg behind a queue) would guarantee pixel-perfect output |
 | **Bilingual** | Store per-client language preference; AI draft in Arabic when client locale is `ar-BH` |
 | **Audit** | Status change log table for compliance (banking use case) |
 | **Tests** | Expand Vitest coverage + Playwright E2E for full quotation lifecycle |
