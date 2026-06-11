@@ -165,16 +165,16 @@ export const ClientsPage = () => {
         <form id="client-form" onSubmit={handleSubmit(onSubmit)} className="px-6 py-4 space-y-4">
           <div>
             <Label>Full Name *</Label>
-            <Input {...register('name')} placeholder="Jane Doe" />
+            <Input {...register('name')} placeholder="First and last name" />
             <FieldError message={errors.name?.message} />
           </div>
           <div>
             <Label>Company</Label>
-            <Input {...register('company')} placeholder="ACME Corp" />
+            <Input {...register('company')} placeholder="Company name" />
           </div>
           <div>
             <Label>Email *</Label>
-            <Input {...register('email')} type="email" placeholder="jane@example.com" />
+            <Input {...register('email')} type="email" placeholder="Work email address" />
             <FieldError message={errors.email?.message} />
           </div>
           <div>
