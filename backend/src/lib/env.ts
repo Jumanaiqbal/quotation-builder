@@ -16,6 +16,11 @@ export const env = {
   ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL ?? 'claude-haiku-4-5-20251001',
   N8N_WEBHOOK_URL: process.env.N8N_WEBHOOK_URL ?? '',
   FRONTEND_URL: process.env.FRONTEND_URL ?? 'http://localhost:5173',
+  /** Comma-separated list of allowed browser origins for CORS */
+  CORS_ORIGINS: (process.env.FRONTEND_URL ?? 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
   SEED_ADMIN_EMAIL: process.env.SEED_ADMIN_EMAIL ?? 'admin@example.com',
   SEED_ADMIN_PASSWORD: process.env.SEED_ADMIN_PASSWORD ?? 'password123',
 };

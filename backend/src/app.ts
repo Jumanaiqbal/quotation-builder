@@ -18,9 +18,22 @@ app.get('/', (_req, res) => {
   res.json({ status: 'ok', service: 'Quotify API', health: '/api/health' });
 });
 
-app.use(helmet());
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow server-to-server / curl with no Origin header
+      if (!origin) return callback(null, true);
+      if (env.CORS_ORIGINS.includes(origin)) return callback(null, true);
+      // Vercel preview/production frontends (e.g. quotation-builder-b2y1.vercel.app)
+      if (origin.endsWith('.vercel.app')) return callback(null, true);
+      callback(new Error(`CORS blocked origin: ${origin}`));
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  }),
+);
 
-app.use(cors({ origin: env.FRONTEND_URL }));
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 app.use(express.json());
 
